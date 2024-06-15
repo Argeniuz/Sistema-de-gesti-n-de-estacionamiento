@@ -1,0 +1,50 @@
+from flask import Flask, jsonify, request
+from flask_pymongo import PyMongo
+from bson.objectid import ObjectId
+
+app = Flask(__name__)
+
+# Configuración de la conexión a MongoDB Atlas
+app.config["MONGO_URI"] = "mongodb+srv://usuarioargezarra20:YoLo12@cluster1.mongodb.net/n?retryWrites=true&w=majority
+"
+
+mongo = PyMongo(app)
+
+# Rutas CRUD para Lote de Estacionamiento
+@app.route('/parkinglot', methods=['POST'])
+def create_parking_lot():
+    # Crear un nuevo lote de estacionamiento
+    lot_data = request.json
+    lot_id = mongo.db.parkinglots.insert_one(lot_data).inserted_id
+    return jsonify({"success": True, "lot_id": str(lot_id)}), 201
+
+@app.route('/parkinglot/<lot_id>', methods=['GET'])
+def get_parking_lot(lot_id):
+    # Leer un lote de estacionamiento
+    lot = mongo.db.parkinglots.find_one({"_id": ObjectId(lot_id)})
+    if lot:
+        return jsonify(lot), 200
+    else:
+        return jsonify({"error": "Lote de estacionamiento no encontrado"}), 404
+
+@app.route('/parkinglot/<lot_id>', methods=['PUT'])
+def update_parking_lot(lot_id):
+    # Actualizar un lote de estacionamiento
+    updates = request.json
+    result = mongo.db.parkinglots.update_one({"_id": ObjectId(lot_id)}, {"$set": updates})
+    if result.matched_count:
+        return jsonify({"success": True}), 200
+    else:
+        return jsonify({"error": "Lote de estacionamiento no encontrado"}), 404
+
+@app.route('/parkinglot/<lot_id>', methods=['DELETE'])
+def delete_parking_lot(lot_id):
+    # Eliminar un lote de estacionamiento
+    result = mongo.db.parkinglots.delete_one({"_id": ObjectId(lot_id)})
+    if result.deleted_count:
+        return jsonify({"success": True}), 200
+    else:
+        return jsonify({"error": "Lote de estacionamiento no encontrado"}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
